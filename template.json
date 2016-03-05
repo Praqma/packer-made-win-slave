@@ -1,0 +1,29 @@
+{
+  "variables": {
+    "sn": "Free Trial",
+    "ps": "d:/Packer.io/example/ps.publishsettings",
+    "sa": "packerdemo",
+    "scripts": "d:/Packer.io/example/Azure",
+    "image_label": "Windows Server 2012 R2 Datacenter, January 2016"
+  },
+  "builders": [
+    {
+      "type": "azure",
+      "publish_settings_path": "{{user `ps`}}",
+      "subscription_name": "{{user `sn`}}",
+      "storage_account": "{{user `sa`}}",
+      "storage_account_container": "images",
+      "os_type": "Windows",
+      "os_image_label": "{{user `image_label`}}",
+      "location": "North Europe",
+      "instance_size": "Medium",
+      "user_image_label": "PackerMadeWindowsSlave"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "azure-custom-script-extension",
+      "script_path": "{{user `scripts`}}/setup.ps1"
+    }
+  ]
+}

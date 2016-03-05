@@ -1,0 +1,4 @@
+*~
+*.publishsettings
+.azure
+.packer_cache
