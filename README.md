@@ -1,14 +1,14 @@
-### Login to Azure - you have to use your browser :( Unclear how to automate
+### Login to Azure. First time you have to use your browser :( In order to use on-premise instance you have to add it as additional environment. See "./azure-cli.sh account env" for more details
 
   ./azure-cli.sh login
 
-### Download *.publishsettings file - you have to use your browser again :( Move to this directory and rename to credentials.publishsettings. Possible way to automate is to preinstall this file to the build host. This file is needed for packer to login to Azure
+### Download *.publishsettings file - you have to use your browser again :( Move to this directory and rename to credentials.publishsettings. Possible way to automate is to preinstall this file to the build host. This file is needed for packer to login to Azure. Also, next time when you want to login you can execute "./azure-cli.sh account import credentials.publishsettings" - this command will automatically log you in without browser.
 
   ./azure-cli.sh account download
 
-### Create storage account - will be used to store created images
+### Create storage account - will be used to store created images. Known problem - unclear how to pass in location because of the space in location name. Anyhow most of the commands require at least some interaction with user
 
-  ./azure-cli.sh storage account create --location \'North Europe\' --type LRS packerdemo0
+  ./azure-cli.sh storage account create  --type LRS packerdemo0
 
 ### Find image that you want to use as a base image and use show command to get its label - requered for packer template
 

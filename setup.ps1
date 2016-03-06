@@ -30,7 +30,8 @@ $link = "https://cygwin.com/$filename";
 $remotePath = Join-Path $dstDir $filename;
 Try {
     $webClient.DownloadFile($link, $remotePath);
-    Start-Process $remotePath -NoNewWindow -Wait -Argument '--no-desktop --no-shortcuts --no-startmenu --quiet-mode --site http://cygwin.mirror.constant.com' | Out-Null;
+    # Suppress output from cygwin installer - just to much of text that makes log unreadable
+    Start-Process $remotePath -RedirectStandardOutput Out-Null -NoNewWindow -Wait -Argument '--no-desktop --no-shortcuts --no-startmenu --quiet-mode --site http://cygwin.mirror.constant.com'
 } Catch {
     Write-Host $_.Exception|format-list -force
 }
@@ -50,5 +51,63 @@ Try
     Write-Host $_.Exception|format-list -force
 }
 Write-Host 'Java installation complete!'
+
+Write-Host 'Download and setup Jenkins swarm agent...'
+New-Item 'C:\jenkins' -type directory -force | Out-Null
+$autostart_script = "C:\jenkins\slave-startup.ps1"
+$filename = "swarm-client-2.0-jar-with-dependencies.jar";
+$link = "http://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/swarm-client/2.0/$filename";
+$remotePath = Join-Path 'C:\jenkins' $filename;
+Try {
+    $webClient.DownloadFile($link, $remotePath);
+} Catch {
+    Write-Host $_.Exception|format-list -force
+}
+Write-Host 'Swarm agent is ready!'
+
+# Create new AD user
+#New-ADUser -Name "Phil Gibbins" -GivenName Phil -Surname Gibbins -SamAccountName pgibbins -UserPrincipalName pgibbins@corp.contoso.com -AccountPassword (Read-Host -AsSecureString "AccountPassword") -PassThru | Enable-ADAccount
+
+# No AD so for now use local user
+Write-Host 'Create local user...'
+$computername = $env:computername   # place computername here for remote access
+$username = 'jenkins'
+$password = 'password123!'
+$desc = 'Automatically created local admin account'
+Try {
+    $computer = [ADSI]"WinNT://$computername,computer"
+    $user = $computer.Create("user", $username)
+    $user.SetPassword($password)
+    $user.SetInfo()
+    $user.description = $desc
+    $user.SetInfo()
+    $user.UserFlags = 65536 # ADS_UF_DONT_EXPIRE_PASSWD
+    $user.SetInfo()
+    $group = [ADSI]("WinNT://$computername/administrators,group")
+    $group.add("WinNT://$username,user")
+} Catch {
+    Write-Host $_.Exception|format-list -force
+}
+Write-Host 'Local user created!'
+
+Write-Host 'Create startup script...'
+$command = @'
+$stdOutLog = 'C:\jenkins\stdout.log';
+$stdErrLog = 'C:\jenkins\stderr.log';
+$java = 'C:\Program Files\Java\jdk1.8.0_74\bin\java.exe';
+$jar = 'C:\jenkins\swarm-client-2.0-jar-with-dependencies.jar';
+Start-Process $java -RedirectStandardOutput $stdOutLog -RedirectStandardError $stdErrLog -NoNewWindow -Argument " -jar $jar -executors 5 -fsroot c:\jenkins\workspace -labels windows -name azure-slave -master http://188.166.117.16:8080 -username jenkins -password password123!";
+'@
+$command | Out-File $autostart_script;
+Write-Host 'Setup on boot trigger...';
+Try {
+    $trigger = New-JobTrigger -AtStartup -RandomDelay 00:01:00;
+    $securePassword = $password | ConvertTo-SecureString -AsPlainText -Force
+    $credentials = New-Object System.Management.Automation.PSCredential -ArgumentList $username, $securePassword
+    Register-ScheduledJob -Credential $credentials -Trigger $trigger -FilePath $autostart_script -Name JenkinsSlave;
+} catch {
+    Write-Host $_.Exception|format-list -force
+}
+Write-Host 'Startup script registered!';
 
 Write-Host 'Ready to go!';
