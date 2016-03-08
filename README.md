@@ -28,7 +28,7 @@
 
 - Kick off build using the command below
 
-  ./packer.sh build -var "scripts=." -var "ps=credentials.publishsettings" -var "sa=packerdemo0"
+  ./packer.sh build -var "scripts=." -var "ps=credentials.publishsettings" -var "sa=packerdemo0" template.json
 
 - Find your image
 
