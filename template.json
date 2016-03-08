@@ -23,6 +23,7 @@
   "provisioners": [
     {
       "type": "azure-custom-script-extension",
+      "distr_src_path": "{{user `scripts`}}/jenkins_config",
       "script_path": "{{user `scripts`}}/setup.ps1"
     }
   ]

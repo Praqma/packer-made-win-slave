@@ -71,8 +71,9 @@ Write-Host 'Swarm agent is ready!'
 # No AD so for now use local user
 Write-Host 'Create local user...'
 $computername = $env:computername   # place computername here for remote access
-$username = 'jenkins'
-$password = 'password123!'
+$master_url = (Get-Content jenkins.txt -TotalCount 1)
+$username = (Get-Content jenkins.txt -TotalCount 2)[-1]
+$password = (Get-Content jenkins.txt -TotalCount 3)[-1]
 $desc = 'Automatically created local admin account'
 Try {
     $computer = [ADSI]"WinNT://$computername,computer"
@@ -91,14 +92,19 @@ Try {
 Write-Host 'Local user created!'
 
 Write-Host 'Create startup script...'
-$command = @'
-$stdOutLog = 'C:\jenkins\stdout.log';
-$stdErrLog = 'C:\jenkins\stderr.log';
-$java = 'C:\Program Files\Java\jdk1.8.0_74\bin\java.exe';
-$jar = 'C:\jenkins\swarm-client-2.0-jar-with-dependencies.jar';
-Start-Process $java -RedirectStandardOutput $stdOutLog -RedirectStandardError $stdErrLog -NoNewWindow -Argument " -jar $jar -executors 5 -fsroot c:\jenkins\workspace -labels windows -name azure-slave -master http://188.166.117.16:8080 -username jenkins -password password123!";
-'@
+# TODO: This is a potential problem because password will be saved in the plain text. On the other hand if you are able to login - then you already know the password.
+# Conclusion - it is not perfect but good enough solution for a time being
+$command = @"
+`$stdOutLog = 'C:\jenkins\stdout.log';
+`$stdErrLog = 'C:\jenkins\stderr.log';
+`$java = 'C:\Program Files\Java\jdk1.8.0_74\bin\java.exe';
+`$jar = 'C:\jenkins\swarm-client-2.0-jar-with-dependencies.jar';
+`$args = " -jar `$jar -executors 5 -fsroot c:\jenkins\workspace -labels windows -name azure-slave -master $master_url -username $username -password $password";
+Start-Process `$java -RedirectStandardOutput `$stdOutLog -RedirectStandardError `$stdErrLog -NoNewWindow -Argument `$args;
+"@
 $command | Out-File $autostart_script;
+Write-Host 'Start up script is ready!'
+
 Write-Host 'Setup on boot trigger...';
 Try {
     $trigger = New-JobTrigger -AtStartup -RandomDelay 00:01:00;

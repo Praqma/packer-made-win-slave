@@ -18,9 +18,11 @@
 
   ./azure-cli.sh storage account create  --type LRS packerdemo0
 
--  Find image that you want to use as a base image and use show command to get its label - requered for packer template
+- Find image that you want to use as a base image and use show command to get its label - requered for packer template
 
   ./azure-cli.sh vm image show a699494373c04fc0bc8f2bb1389d6106__Windows-Server-2012-R2-20160126-en.us-127GB.vhd
+
+- Create jenkins_config/jenkins.txt - it should contain 3 lines - url to master, user name, passoword. Those credentials will be used to create local user and for Jenkins Swarm agent when connecting to master
 
 ## Build image and start slave
 
