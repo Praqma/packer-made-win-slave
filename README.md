@@ -1,3 +1,6 @@
+---
+maintainer: alexsedova
+---
 # Azure
 
 ## Preparations
